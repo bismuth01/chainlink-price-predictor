@@ -10,3 +10,7 @@ tensorflow
 scipy
 matplotlib
 ta
+
+# For the LLM
+google-genai
+python-dotenv
