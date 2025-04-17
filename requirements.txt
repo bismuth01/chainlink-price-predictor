@@ -1,0 +1,12 @@
+# For price fetcher
+web3
+pandas
+
+# For the model
+pandas
+numpy
+scikit-learn
+tensorflow
+scipy
+matplotlib
+ta
