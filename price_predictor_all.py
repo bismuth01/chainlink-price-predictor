@@ -19,7 +19,9 @@ import math
 
 import matplotlib.pyplot as plt
 
-SEQ_LEN = 20 #Number of days of sequence the ML model gets to look into
+SEQ_LEN = 20 # Number of days of sequence the ML model gets to look into
+TIME_FRAME = '5min' # Interval made in data
+NEXT_PREDICTION_IN_MINUTES = 5
 
 def create_sequences(data, seq_len, label_index):
     X, y = [], []
@@ -91,10 +93,10 @@ df = df.set_index('timestamp')
 print(df.describe())
 
 # %% Creating per 5min data
-start_time = df.index.min().floor('5min')
-end_time = df.index.max().ceil('5min')
+start_time = df.index.min().floor(TIME_FRAME)
+end_time = df.index.max().ceil(TIME_FRAME)
 
-regular_grid = pd.date_range(start=start_time, end=end_time, freq='5min')
+regular_grid = pd.date_range(start=start_time, end=end_time, freq=TIME_FRAME)
 
 df_regular = df.reindex(df.index.union(regular_grid)).sort_index()
 df_regular['price'] = df_regular['price'].interpolate(method='time')
@@ -261,7 +263,7 @@ plt.show()
 
 # %% Predicting the next price from last available data
 last_timestamp = df_processed.index[-1]
-next_timestamp = last_timestamp + pd.Timedelta(minutes=5)
+next_timestamp = last_timestamp + pd.Timedelta(minutes=NEXT_PREDICTION_IN_MINUTES)
 
 rnn_next_price = predict_next_price(df_processed, rnn_model, SEQ_LEN, scaler, y_scaler)
 lstm_next_price = predict_next_price(df_processed, lstm_model, SEQ_LEN, scaler, y_scaler)
