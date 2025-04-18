@@ -1,3 +1,6 @@
+# For settting env
+python-dotenv
+
 # For price fetcher
 web3
 pandas
@@ -13,4 +16,3 @@ ta
 
 # For the LLM
 google-genai
-python-dotenv

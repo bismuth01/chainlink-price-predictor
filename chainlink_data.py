@@ -4,13 +4,16 @@ import pandas as pd
 from datetime import datetime
 import os
 import csv
+from dotenv import load_dotenv
 
-OUTPUT_FILE = 'eth_usd_chainlink.csv'
+load_dotenv()
 
-w3 = Web3(Web3.HTTPProvider('https://eth.blockrazor.xyz'))
+OUTPUT_FILE = os.environ['DATA_OUTPUT_FILE']
+
+w3 = Web3(Web3.HTTPProvider(os.environ['NODE_URL']))
 
 # Chainlink ETH/USD Proxy Price Feed contract
-price_feed_address = '0x5147eA642CAEF7BD9c1265AadcA78f997AbB9649'
+price_feed_address = os.environ['PROXY_CONTRACT_ADDRESS']
 price_feed_abi = json.loads('[{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"description","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint80","name":"_roundId","type":"uint80"}],"name":"getRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"version","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]')
 
 # Contract instance

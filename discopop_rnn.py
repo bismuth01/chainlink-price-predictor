@@ -24,10 +24,10 @@ from tensorflow.keras.callbacks import EarlyStopping
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import math
 
-FUNCTION_EPOCHS = 2
-LOG_FILE = 'chat_log.json'
-
 load_dotenv()
+
+FUNCTION_EPOCHS = 2
+LOG_FILE = os.environ['LOG_FILE']
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 
