@@ -1,51 +1,76 @@
-# Price Prediction using RNN, LSTM and GRU and discoPOP like loss function discovery on Chainlink data
+# Chainlink Price Predictor
 
-## Installation
-First clone the repository using
-`git clone https://github.com/bismuth01/chainlink-price-predictor.git`
+## 🔍 Introduction
+This project leverages neural networks like RNN, LSTM, and GRU to predict Ethereum (ETH) prices using historical data fetched directly from Chainlink oracles. Inspired by the [**discoPOP**](https://arxiv.org/abs/2406.08414) paper, it includes an automated framework for discovering custom loss functions using Google's Gemini LLM to better suit the volatility and dynamics of cryptocurrency markets.
+
+With dynamic loss experimentation, time-frame flexibility, and reproducible setup, this project is designed for research, financial modeling, and exploring LLM-assisted ML workflows.
+
+## 📦 Installation
+First clone the repository:
+```bash
+git clone https://github.com/bismuth01/chainlink-price-predictor.git
+cd chainlink-price-predictor
+```
 
 Now, your python installation can use `python` or `python3`. Use the appropriate one in the upcoming commands.
 
-(Optional but Recommended) Make a virtual environment using
-`python -m venv ./venv`
-and activate it using
-`source ./venv/bin/activate`
+(Optional but Recommended) Make a virtual environment:
+```bash
+python -m venv ./venv
+source ./venv/bin/activate
+```
 
-Install the required pip packages using
-`pip install -r requirements.txt`
+Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-> ⚠️ The files use Tensorflow 2.19.0, a lower version might create issues.
-> It is a known issue in Tensorflow 2.x that sometimes tensorflow.keras is not resolved. For that you can use `pip install tf-keras`
+> ⚠️ Note: This project uses TensorFlow 2.19.0. Using an older version might cause issues.
+> If you encounter import errors like tensorflow.keras not being resolved, try:
+> `pip install tf-keras`
 
-## How to setup
-Copy the `.env-local` file and rename it to `.env`.
-A few values are setup but it's better to set your own.
+## ⚙️ Setup
+1. Copy the .env-local file and rename it to .env.
+2. Edit .env with your own values:
+- NODE_URL: Ethereum mainnet RPC node URL (get one from [Chainlist](https://chainlist.org/chain/1))
+- PROXY_CONTRACT_ADDRESS: Chainlink ETH/USD price feed proxy or your custom feed (see [list](https://docs.chain.link/data-feeds/price-feeds/addresses?page=1))
+- DATA_OUTPUT_FILE: Output .csv file to store fetched historical data
+- GEMINI_API_KEY: API key from Google AI Studio
+- LOG_FILE: Output .json file to store LLM interaction logs
 
-You need a node url of a node on the ethereum mainnet which you can get from ![chainlist](https://chainlist.org/chain/1) and set it in `NODE_URL`
+## 🚀 How to use
 
-I have used the `ETH/USD` chainlink proxy contract.
-You can find another proxy price feed contract from their ![list of data feed contracts](https://docs.chain.link/data-feeds/price-feeds/addresses?page=1) and set it in `PROXY_CONTRACT_ADDRESS`.
+### Fetch Historical Price Data
+```bash
+python chainlink_data.py
+```
+- On the first run, it fetches all historical data.
+- The script resumes from where it left off if interrupted.
+- You can rerun it anytime to update the data.
 
-Set a .csv file name for `DATA_OUTPUT_FILE` to get the output of the chainlink historical data in that particular file.
-
-Get a `GEMINI_API_KEY` from Google AI Studio.
-Set a .json file name for `LOG_FILE` to log the conversation and statistics with the LLM.
-
-## How to use
-First run `chainlink_data.py` which will load the historical data available in the proxy contract. If it is the first time, then you might need to wait a while for it to fetch everything. The file is made such that it resumes where it left, so if fetching fails for some reason, running it again, will make it continue from where it left. Which also means that it can always update to the latest data.
-
+### Using the models
 The files are used as follows: -
 - `price_predictor_rnn.py` -> Contains RNN model
 - `price_predictor_lstm.py` -> Contains LSTM model
 - `price_predictor_gru.py` -> Contains GRU model
 - `price_predictor_all.py` -> Contains all models, helps in comparision
-- `discopop_all.py` -> Chats with a google provided LLM to discover new loss functions similar to ![discoPOP](https://arxiv.org/abs/2406.08414)
 
-Before running any file, at the starting of the file, you can set: -
-- `TIME_FRAME` which preprocesses the data to a certain timeframe, which is set to `5min` by default
-- `NEXT_PREDICTION_IN_MINUTES` which sets after which timeframe should the upcoming price be predicted, should be set to the same as `TIME_FRME`.
-- `SEQ_LEN` which set the length of sequence, i.e., how far back data the model can see at a time, which is set to `20` by default.
+#### Configurable Parameters
+At the top of each script, you can modify:
+- `TIME_FRAME`: Timeframe for downsampling data (default: `5min`)
+- `NEXT_PREDICTION_IN_MINUTES`: Time ahead to predict (should match `TIME_FRAME`)
+- `SEQ_LEN`: Number of past data points the model can see (default: `20`)
 
-## Quickstart resources
-`eth_usd_chainlink.csv` file already contains some historical price data on `ETH/USD` price feed which can save some time because it only needs to be updated.
-`sample_chat_log.json` file already contains a few conversations with the LLM to find better results fast.
+### Using custom loss function generation
+`discopop_all.py` -> This interacts with the Gemini LLM to generate custom loss functions, inspired by [discoPOP](https://arxiv.org/abs/2406.08414), tailored for financial time series prediction.
+
+After each response from the LLM, the custom loss function is extracted and used in RNN, LSTM and GRU model training. The results are sent back to the LLM to help make better functions.
+It records the previous conversations and saves it to the set `LOG_FILE` so history is remembered by the Gemini LLM when re-run to produce better results.
+
+#### Configurable Parameters
+At the top of the script, you can modify:
+- `FUNCTION_EPOCHS`: Number of times functions to generate and evaluate (default: `2`)
+
+## ⚡ Quickstart resources
+`eth_usd_chainlink.csv`: Pre-fetched ETH/USD price data to skip initial fetching
+`sample_chat_log.json`: Example Gemini conversation logs to speed up loss function discovery
