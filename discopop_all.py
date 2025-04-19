@@ -11,7 +11,6 @@ from datetime import datetime
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.trend import SMAIndicator, EMAIndicator, ADXIndicator, MACD
 from ta.momentum import RSIIndicator, StochasticOscillator, TSIIndicator
-from ta.volume import VolumeWeightedAveragePrice
 
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
