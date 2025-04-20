@@ -25,7 +25,7 @@ import math
 
 load_dotenv()
 
-FUNCTION_EPOCHS = 10
+FUNCTION_EPOCHS = 2
 LOG_FILE = os.environ['LOG_FILE']
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
