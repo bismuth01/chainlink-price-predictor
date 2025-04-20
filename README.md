@@ -60,6 +60,7 @@ At the top of each script, you can modify:
 - `TIME_FRAME`: Timeframe for downsampling data (default: `5min`)
 - `NEXT_PREDICTION_IN_MINUTES`: Time ahead to predict (should match `TIME_FRAME`)
 - `SEQ_LEN`: Number of past data points the model can see (default: `20`)
+- `NUM_NEXT_PREDICTION_POINTS`: Number of past predictions to plot with the future price prediction (default: `5`)
 
 ### Using custom loss function generation
 `discopop_all.py` -> This interacts with the Gemini LLM to generate custom loss functions, inspired by [discoPOP](https://arxiv.org/abs/2406.08414), tailored for financial time series prediction.
