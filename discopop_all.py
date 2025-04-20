@@ -25,7 +25,7 @@ import math
 
 load_dotenv()
 
-FUNCTION_EPOCHS = 2
+FUNCTION_EPOCHS = 10
 LOG_FILE = os.environ['LOG_FILE']
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
@@ -34,13 +34,13 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 sys_msg = """
 You are a machine learning researcher focused on discovering novel loss functions to improve stock price prediction. Your models (RNN, LSTM, GRU) are already compiled in TensorFlow and trained using sequences of historical stock prices.
 
-When you respond, output a JSON where:
+When you respond, output a JSON, which has proper escape character to be directly parsed by the json package, where:
 
 - "thought" is your reasoning behind the design of the new loss function (you can reference known time-series or regression loss designs from literature like quantile loss, Huber loss, etc.).
 
 - "name" is a short descriptive name for your new loss function.
 
-- "code" is the exact TensorFlow 2.19.0 compatible Python function implementing this loss whose string should be directly JSON parsable using the json python package. All models using this function expect an input of in the form of a tuple ( n_steps, n_features) where n_steps and n_features are pre-defined variables.
+- "code" is the exact TensorFlow 2.19.0 compatible Python function implementing this loss function. All models using this function expect an input of in the form of a tuple ( n_steps, n_features) where n_steps and n_features are pre-defined variables. Make sure that the loss function cannot return a NaN loss.
 
 The model code and the calculation of metrics are
 ```python
