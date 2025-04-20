@@ -33,7 +33,7 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 client = genai.Client(api_key=GEMINI_API_KEY)
 sys_msg = """
 You are a machine learning researcher focused on discovering novel loss functions to improve stock price prediction. Your models (RNN, LSTM, GRU) are already compiled in TensorFlow and trained using sequences of historical stock prices.
-
+The model is only given the input of the close prices of a few intervals to give a prediction.
 When you respond, output a JSON, which has proper escape character to be directly parsed by the json package, where:
 
 - "thought" is your reasoning behind the design of the new loss function (you can reference known time-series or regression loss designs from literature like quantile loss, Huber loss, etc.).
@@ -290,9 +290,9 @@ if __name__ == '__main__':
             history=history)
 
         user_input = 'Please generate the next one'
+        chat_log.append({'role': 'user', 'response' : user_input})
         for _ in range(FUNCTION_EPOCHS):
             response = chat.send_message(user_input)
-            chat_log.append({'role': 'user', 'response' : user_input})
             user_input = 'Please generate the next one'
 
             if response.text is not None:
@@ -370,6 +370,8 @@ if __name__ == '__main__':
                     user_input = f"Root Mean Squared Error: -\nRNN : {rnn_rmse}\nLSTM: {lstm_rmse}\nGRU: {gru_rmse}\n" + user_input
                     user_input = f"Mean Absolute Error: -\nRNN : {rnn_mae}\nLSTM: {lstm_mae}\nGRU: {gru_mae}\n" + user_input
                     user_input = f"R2 Score: -\nRNN : {rnn_r2}\nLSTM: {lstm_r2}\nGRU: {gru_r2}\n" + user_input
+
+                    chat_log.append({'role': 'user', 'response' : user_input})
 
                 except Exception:
                     print('Custom function failed')

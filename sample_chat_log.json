@@ -1,25 +1,5 @@
 [
   {
-    "role": "user",
-    "response": "Please generate the next one"
-  },
-  {
-    "role": "model",
-    "response": "{\n  \"thought\": \"I want to design a loss function that's robust to outliers and also considers the relative error, which is often more important in financial applications than absolute error. I'll combine Huber loss with a term that penalizes large percentage errors.\",\n  \"name\": \"robust_relative_huber\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n    delta = 0.1  # Huber parameter\\n    relative_error = tf.abs((y_true - y_pred) / (y_true + 1e-7)) # Adding a small constant to avoid division by zero\\n    huber_loss = tf.where(tf.abs(relative_error) <= delta, 0.5 * tf.square(relative_error), delta * tf.abs(relative_error) - 0.5 * delta * delta)\\n    mean_huber_loss = tf.reduce_mean(huber_loss)\\n    return mean_huber_loss\"\n}"
-  },
-  {
-    "role": "user",
-    "response": "R2 Score: -\nRNN : 0.00021969589693648928\nLSTM: -0.36299313280025935\nGRU: 0.009436498138367111\nMean Absolute Error: -\nRNN : 24.294008974257586\nLSTM: 26.280373664040052\nGRU: 23.281516620929903\nRoot Mean Squared Error: -\nRNN : 28.510617956795606\nLSTM: 33.28903272020026\nGRU: 28.378896438827624\nPlease generate the next one"
-  },
-  {
-    "role": "model",
-    "response": "{\n  \"thought\": \"Stock price prediction benefits from focusing on directional accuracy as that's directly related to profitability. I'll create a loss that heavily penalizes incorrect direction predictions and is more forgiving when the predicted direction is correct but the magnitude is off. I will combine Binary Crossentropy with Mean Squared Error.\",\n  \"name\": \"directional_bce_mse\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    # Calculate directional changes\\n    y_true_diff = y_true[1:] - y_true[:-1]\\n    y_pred_diff = y_pred[1:] - y_pred[:-1]\\n\\n    # Convert to binary labels (1 if positive change, 0 if negative/no change)\\n    y_true_binary = tf.cast(y_true_diff > 0, tf.float32)\\n    y_pred_binary = tf.cast(y_pred_diff > 0, tf.float32)\\n\\n    # Calculate binary crossentropy loss for directional accuracy\\n    bce = tf.keras.losses.BinaryCrossentropy()\\n    directional_loss = bce(y_true_binary, y_pred_binary)\\n\\n    # Calculate MSE for magnitude accuracy (optional, can adjust weight)\\n    mse = tf.reduce_mean(tf.square(y_true - y_pred))\\n\\n    # Combine losses (adjust weights as needed)\\n    total_loss = 0.7 * directional_loss + 0.3 * mse\\n\\n    return total_loss\"\n}"
-  },
-  {
-    "role": "user",
-    "response": "Please generate the next one"
-  },
-  {
     "role": "model",
     "response": "{\n  \"thought\": \"Stock price volatility is a key factor, especially when trading options or managing risk. I want a loss function that penalizes mispredictions of the price range. I'll estimate the high and low prices within a certain confidence interval based on the predicted value and then penalize based on whether the actual price falls within this predicted range. This adds a probabilistic element and addresses prediction uncertainty.\",\n  \"name\": \"range_sensitive_loss\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    # Define a confidence interval (e.g., 95%)\\n    confidence_level = 0.95\\n    z_score = 1.96  # Z-score for 95% confidence\\n\\n    # Estimate standard deviation (proxy for volatility).  Use absolute error as a simple estimate.\\n    std_dev_estimate = tf.abs(y_true - y_pred)\\n\\n    # Calculate the range based on the predicted value and estimated volatility\\n    range_high = y_pred + z_score * std_dev_estimate\\n    range_low = y_pred - z_score * std_dev_estimate\\n\\n    # Determine if the true value falls within the predicted range\\n    within_range = tf.logical_and(y_true >= range_low, y_true <= range_high)\\n\\n    # Penalize if the true value is outside the predicted range\\n    penalty = tf.where(within_range, tf.zeros_like(y_true, dtype=tf.float32), tf.abs(y_true - y_pred))\\n\\n    # MSE Component to encourage better predictions\\n    mse = tf.reduce_mean(tf.square(y_true - y_pred))\\n\\n    # Combine range violation penalty with MSE.\\n    # Adjust weights as needed. Heavier penalty if outside the range.\\n    loss = tf.reduce_mean(penalty) + 0.1 * mse # Add small weight to MSE\\n\\n    return loss\"\n}"
   },
@@ -29,6 +9,42 @@
   },
   {
     "role": "model",
-    "response": "{\n  \"thought\": \"The model seems to be performing well. Let's try to fine-tune by adding a penalty for large deviations from the previous actual value, encouraging the model to stay closer to the recent price trend. This aims to capture short-term momentum and reduce overshooting.\",\n  \"name\": \"momentum_constrained_loss\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    # Calculate the difference between consecutive true values (momentum)\\n    true_momentum = y_true[1:] - y_true[:-1]\\n\\n    # Calculate the difference between consecutive predicted values\\n    pred_momentum = y_pred[1:] - y_pred[:-1]\\n\\n    # Calculate MSE between predicted and true momentum\\n    momentum_loss = tf.reduce_mean(tf.square(true_momentum - pred_momentum))\\n\\n    # Standard MSE loss\\n    mse_loss = tf.reduce_mean(tf.square(y_true - y_pred))\\n\\n    # Combine the losses with a weighted sum.  Adjust the weights to emphasize momentum or general accuracy.\\n    total_loss = 0.8 * mse_loss + 0.2 * momentum_loss\\n\\n    return total_loss\"\n}"
+    "response": "{\n  \"thought\": \"The extreme quantile loss showed improvement compared to the volatility loss. The RNN is still performing poorly, but the LSTM and GRU models are now better. I will try another approach that incorporates a measure of the spread or variance of the errors. I'll calculate the standard deviation of the errors and add a term to the loss function that penalizes high variance. This encourages the model to make more consistent predictions, even if they are not always perfectly accurate. It's a form of regularization encouraging more stable predictions.\",\n  \"name\": \"error_variance_penalty\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    error = y_true - y_pred\\n    mse = tf.reduce_mean(tf.square(error)) # Regular MSE\\n    \\n    # Calculate standard deviation of errors\\n    error_std = tf.math.reduce_std(error) # Standard deviation of errors\\n\\n    # Penalize high error variance\\n    variance_penalty = tf.square(error_std)\\n    \\n    # Combine MSE with a variance penalty\\n    total_loss = mse + 0.1 * variance_penalty\\n    return total_loss\"\n}"
+  },
+  {
+    "role": "user",
+    "response": "R2 Score: -\nRNN : 0.9317570425721009\nLSTM: 0.9937620053998774\nGRU: 0.9902040170734124\nMean Absolute Error: -\nRNN : 4.874529667322137\nLSTM: 1.2339724912791705\nGRU: 1.6774412829687892\nRoot Mean Squared Error: -\nRNN : 6.190099615209412\nLSTM: 1.8715059644164833\nGRU: 2.345269351040374\nPlease generate the next one"
+  },
+  {
+    "role": "model",
+    "response": "{\n  \"thought\": \"Combining quantile loss and variance penalty didn't yield the desired results; performance decreased for RNN, LSTM and GRU. The model is perhaps over-penalized. Let's try a loss that uses a modified Huber loss with adaptive delta. The delta is adapted to the magnitude of the error itself, making the loss more robust. The formula for delta is based on the mean absolute error of the batch. That way, outlier sensitivity is controlled in each batch of predictions. This might result in better performance than a static delta or variance-based regularization.\",\n  \"name\": \"adaptive_huber_loss\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    error = y_true - y_pred\\n    mae = tf.reduce_mean(tf.abs(error)) # Mean Absolute Error for dynamic delta\\n    delta = mae  # Delta is the mean absolute error\\n\\n    # Huber Loss calculation\\n    abs_error = tf.abs(error)\\n    quadratic = tf.minimum(abs_error, delta)\\n    linear = abs_error - quadratic\\n    huber_loss = 0.5 * tf.square(quadratic) + delta * linear\\n    mean_huber_loss = tf.reduce_mean(huber_loss)\\n\\n    return mean_huber_loss\"\n}"
+  },
+  {
+    "role": "user",
+    "response": "R2 Score: -\nRNN : 0.9300977965404295\nLSTM: 0.9940364159213739\nGRU: 0.9918270108095882\nMean Absolute Error: -\nRNN : 4.908431817618942\nLSTM: 1.1403560535084927\nGRU: 1.4311031679040007\nRoot Mean Squared Error: -\nRNN : 6.264900115356442\nLSTM: 1.8298790777938803\nGRU: 2.142195884144704\nPlease generate the next one"
+  },
+  {
+    "role": "model",
+    "response": "{\n  \"thought\": \"I want to create a loss function that is less sensitive to outliers than MSE, but still differentiable. Huber loss is a good start, but I want to dynamically adjust the delta parameter based on the magnitude of the predicted value. This will make the loss more robust when the predicted price is very high or very low, as these extreme values often have higher variance. This is similar to the idea behind heteroscedastic regression, where the variance is a function of the input.\",\n  \"name\": \"adaptive_huber\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n    delta = tf.abs(y_pred) / 2.0 # Delta is proportional to the absolute predicted value\\n    \\n    error = tf.abs(y_true - y_pred)\\n    \\n    is_smaller = tf.cast(error <= delta, tf.float32)\\n    is_larger = tf.cast(error > delta, tf.float32)\\n    \\n    loss = is_smaller * 0.5 * tf.square(error) + is_larger * delta * (error - 0.5 * delta)\\n    \\n    return tf.reduce_mean(loss) \"\n}"
+  },
+  {
+    "role": "user",
+    "response": "R2 Score: -\nRNN : 0.9899875985944746\nLSTM: 0.9824781956266436\nGRU: 0.9923243522086005\nMean Absolute Error: -\nRNN : 1.5095082893107348\nLSTM: 2.1193636487706393\nGRU: 1.4898783530006365\nRoot Mean Squared Error: -\nRNN : 2.371034343181861\nLSTM: 3.136592732866378\nGRU: 2.0759946856611076\nPlease generate the next one"
+  },
+  {
+    "role": "model",
+    "response": "{\n  \"thought\": \"In financial time series, underestimating risk can be very costly. I want to create a loss function that penalizes underestimation of the true price more heavily than overestimation, while also being robust to outliers. I'll combine a modified Huber loss with an asymmetric penalty term that scales with the magnitude of the underestimation. This is similar to quantile loss, but smoothed using Huber.\",\n  \"name\": \"asymmetric_huber\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    error = y_true - y_pred\\n\\n    # Define a threshold for Huber loss\\n    delta = 1.0\\n\\n    # Calculate Huber loss\\n    abs_error = tf.abs(error)\\n    quadratic = tf.minimum(abs_error, delta)\\n    linear = abs_error - quadratic\\n    huber_loss = 0.5 * tf.square(quadratic) + delta * linear\\n\\n    # Asymmetric penalty: penalize underestimation more\\n    alpha = 0.75  # Higher alpha penalizes underestimation more\\n    asymmetric_penalty = tf.where(error < 0, alpha * tf.abs(error), (1 - alpha) * tf.abs(error))\\n\\n    # Combine Huber loss with asymmetric penalty\\n    loss = huber_loss + 0.1 * asymmetric_penalty #Scale the asymmetric penalty \\n\\n    return tf.reduce_mean(loss)\"\n}"
+  },
+  {
+    "role": "user",
+    "response": "R2 Score: -\nRNN : 0.9896708338741658\nLSTM: 0.9932620496455863\nGRU: 0.9896543520597837\nMean Absolute Error: -\nRNN : 1.8988612119635941\nLSTM: 1.1498680472223426\nGRU: 1.829789092241663\nRoot Mean Squared Error: -\nRNN : 2.4082487827940047\nLSTM: 1.9450582934280027\nGRU: 2.410169387406464\nPlease generate the next one"
+  },
+  {
+    "role": "model",
+    "response": "{\n  \"thought\": \"The prior attempt failed to address the core issues in variance calculation, and it seems overly simplified. I will create a loss function that focuses on direction prediction accuracy with a margin. Instead of directly comparing signs, I'll use a sigmoid function to create a smoother approximation of the sign function, allowing for a differentiable penalty. The margin ensures that small directional errors are tolerated, and the loss only activates when the prediction is confidently in the wrong direction. The loss is also weighted by the magnitude of the actual return to prioritize correct predictions for larger price movements.\",\n  \"name\": \"margin_directional_accuracy\",\n  \"code\": \"def custom_loss(y_true, y_pred):\\n    import tensorflow as tf\\n\\n    # Calculate returns\\n    true_returns = y_true[:, 1:] - y_true[:, :-1]\\n    pred_returns = y_pred[:, 1:] - y_pred[:, :-1]\\n\\n    # Define a margin for directional accuracy\\n    margin = 0.01\\n\\n    # Use sigmoid to approximate the sign function\\n    true_direction = tf.sigmoid(true_returns / margin)\\n    pred_direction = tf.sigmoid(pred_returns / margin)\\n\\n    # Calculate the directional accuracy loss. Penalize wrong direction predictions\\n    # more strongly when the true return is large.\\n    directional_loss = tf.abs(true_direction - pred_direction) * tf.abs(true_returns) # Weight by return magnitude\\n\\n    # Average the loss over all predictions\\n    loss = tf.reduce_mean(directional_loss)\\n\\n    return loss\"\n}"
+  },
+  {
+    "role": "user",
+    "response": "R2 Score: -\nRNN : 0.9896708338741658\nLSTM: 0.9932620496455863\nGRU: 0.9896543520597837\nMean Absolute Error: -\nRNN : 1.8988612119635941\nLSTM: 1.1498680472223426\nGRU: 1.829789092241663\nRoot Mean Squared Error: -\nRNN : 2.4082487827940047\nLSTM: 1.9450582934280027\nGRU: 2.410169387406464\nPlease generate the next one"
   }
 ]
