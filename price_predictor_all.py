@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 SEQ_LEN = 20 # Number of days of sequence the ML model gets to look into
 TIME_FRAME = '5min' # Interval made in data
 NEXT_PREDICTION_IN_MINUTES = 5
+NUM_NEXT_PREDICTION_POINTS = 5
 
 def create_sequences(data, seq_len, label_index):
     X, y = [], []
@@ -268,15 +269,24 @@ rnn_next_price = predict_next_price(df_processed, rnn_model, SEQ_LEN, scaler, y_
 lstm_next_price = predict_next_price(df_processed, lstm_model, SEQ_LEN, scaler, y_scaler)
 gru_next_price = predict_next_price(df_processed, gru_model, SEQ_LEN, scaler, y_scaler)
 
+prediction_timestamps = list(df_processed.index[-NUM_NEXT_PREDICTION_POINTS:]) + [next_timestamp]
+historical_indices = list(range(len(y_test_actual) - NUM_NEXT_PREDICTION_POINTS, len(y_test_actual)))
+rnn_predictions = [rnn_y_pred[i][0] for i in historical_indices] + [rnn_next_price]
+lstm_predictions = [lstm_y_pred[i][0] for i in historical_indices] + [lstm_next_price]
+gru_predictions = [gru_y_pred[i][0] for i in historical_indices] + [gru_next_price]
+
 print(f"Predicted price at {next_timestamp}: -")
 print(f"RNN: ${rnn_next_price:.2f}\nLSTM: ${lstm_next_price:.2f}\nGRU: ${gru_next_price:.2f}\n")
 
 # %% Visualizing where the predicted price lies
 plt.figure(figsize=(15, 8))
 plt.plot(df_processed.index[-100:], df_processed['price'][-100:], label='Historical Price')
-plt.scatter([next_timestamp], [rnn_next_price], color='red', s=30, label='RNN Predicted Next Price')
-plt.scatter([next_timestamp], [lstm_next_price], color='green', s=30, label='LSTM Predicted Next Price')
-plt.scatter([next_timestamp], [gru_next_price], color='blue', s=30, label='GRU Predicted Next Price')
+plt.scatter([next_timestamp], [rnn_next_price], color='red', s=20, label='RNN Predicted Next Price')
+plt.scatter([next_timestamp], [lstm_next_price], color='green', s=20, label='LSTM Predicted Next Price')
+plt.scatter([next_timestamp], [gru_next_price], color='blue', s=20, label='GRU Predicted Next Price')
+plt.plot(prediction_timestamps, rnn_predictions, color='red', label='RNN Price Prediction')
+plt.plot(prediction_timestamps, lstm_predictions, color='green', label='LSTM Price Prediction')
+plt.plot(prediction_timestamps, gru_predictions, color='blue', label='GRU Price Prediction')
 plt.title('ETH/USD Price Prediction')
 plt.xlabel('Time')
 plt.ylabel('Price (USD)')

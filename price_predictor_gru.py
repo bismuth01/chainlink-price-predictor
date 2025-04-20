@@ -21,6 +21,7 @@ import matplotlib.pyplot as plt
 SEQ_LEN = 20 # Number of days of sequence the ML model gets to look into
 TIME_FRAME = '5min' # Interval made in data
 NEXT_PREDICTION_IN_MINUTES = 5
+NUM_NEXT_PREDICTION_POINTS = 5
 
 def create_sequences(data, seq_len, label_index):
     X, y = [], []
@@ -190,14 +191,20 @@ plt.show()
 last_timestamp = df_processed.index[-1]
 next_timestamp = last_timestamp + pd.Timedelta(minutes=NEXT_PREDICTION_IN_MINUTES)
 
-next_price = predict_next_price(df_processed, model, SEQ_LEN, scaler, y_scaler)
+gru_next_price = predict_next_price(df_processed, model, SEQ_LEN, scaler, y_scaler)
 
-print(f"Predicted price at {next_timestamp}: ${next_price:.2f}")
+prediction_timestamps = list(df_processed.index[-NUM_NEXT_PREDICTION_POINTS:]) + [next_timestamp]
+historical_indices = list(range(len(y_test_actual) - NUM_NEXT_PREDICTION_POINTS, len(y_test_actual)))
+gru_predictions = [y_pred[i][0] for i in historical_indices] + [gru_next_price]
+
+print(f"Predicted price at {next_timestamp}: -")
+print(f"GRU: ${gru_next_price:.2f}\n")
 
 # %% Visualizing where the predicted price lies
 plt.figure(figsize=(15, 8))
 plt.plot(df_processed.index[-100:], df_processed['price'][-100:], label='Historical Price')
-plt.scatter([next_timestamp], [next_price], color='red', s=100, label='Predicted Next Price')
+plt.scatter([next_timestamp], [gru_next_price], color='blue', s=20, label='GRU Predicted Next Price')
+plt.plot(prediction_timestamps, gru_predictions, color='blue', label='GRU Price Prediction')
 plt.title('ETH/USD Price Prediction')
 plt.xlabel('Time')
 plt.ylabel('Price (USD)')
